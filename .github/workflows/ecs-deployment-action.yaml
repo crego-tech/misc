@@ -72,7 +72,8 @@ jobs:
           environment-variables: |
             SERVICE_ENV=${{ inputs.env_name }}
             AWS_REGION=${{ inputs.aws_region }}
-            ${{ inputs.service_task_envs }}
+            SECRET_CONFIG_KEY=${{ inputs.secret_config_key }}
+            INTERNAL_SERVICE_HOST=${{ inputs.internal_service_host }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
