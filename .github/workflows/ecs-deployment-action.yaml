@@ -28,6 +28,12 @@ on:
       dockerfile_path:
         required: true
         type: string
+      secret_config_key:
+        required: true
+        type: string
+      internal_service_host:
+        required: true
+        type: string
 
 jobs:
   run:
