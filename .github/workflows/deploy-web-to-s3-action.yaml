@@ -1,0 +1,36 @@
+---
+name: "Web Deployment Action"
+
+on:
+  workflow_call:
+    inputs:
+      env_name:
+        required: true
+        type: string
+      bucket_name:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env_name }}
+    steps:
+      - name: Installing dependencies
+        run: npm install
+
+      - name: Building project
+        run: npm run build
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Deploy to S3 bucket
+        run: aws s3 sync ./build/ s3://${{ inputs.bucket_name}} --acl public-read
+
+      - name: Invalidate Cloudfront
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_ID }} --paths "/*"
