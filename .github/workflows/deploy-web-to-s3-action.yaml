@@ -17,7 +17,7 @@ jobs:
     environment: ${{ inputs.env_name }}
     steps:
       - name: Installing dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Building project
         run: npm run build
