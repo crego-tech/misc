@@ -10,7 +10,9 @@ on:
       bucket_name:
         required: true
         type: string
-
+      api_endpoint:
+        required: true
+        type: string
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -23,6 +25,11 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Building project
+        env:
+          REACT_APP_NAME: "Jupiter"
+          REACT_APP_BASE_LAYOUT_CONFIG_KEY: "crego-layout"
+          REACT_APP_LOCAL_STORAGE_AUTH: "crego-auth"
+          REACT_APP_API_ROOT_DEFAULT: ${{ inputs.api_endpoint }}
         run: npm run build
 
       - name: Configure AWS Credentials
