@@ -24,6 +24,9 @@ jobs:
       - name: Installing dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Clean Cache
+        run: npm cache clean --force
+
       - name: Building project
         env:
           REACT_APP_NAME: "Jupiter"
