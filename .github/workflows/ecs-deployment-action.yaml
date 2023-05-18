@@ -34,6 +34,12 @@ on:
       internal_service_host:
         required: true
         type: string
+      sentry_project:
+        required: true
+        type: string
+      sentry_org:
+        required: true
+        type: string
 
 jobs:
   run:
@@ -87,3 +93,12 @@ jobs:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
           service: ${{ inputs.ecs_service }}
           cluster: ${{ inputs.ecs_cluster }}
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_RELEASE_TOKEN }}
+          SENTRY_ORG: ${{ inputs.sentry_org }}
+          SENTRY_PROJECT: ${{ inputs.sentry_project }}
+        with:
+          environment: ${{ inputs.env_name }}

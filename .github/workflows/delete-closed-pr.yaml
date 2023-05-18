@@ -1,7 +1,8 @@
 name: Delete branch when PR is closed
 on:
-  pull_request:
-    types: [closed]
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron: "2 * * * *"
 
 jobs:
   delete-branch:
