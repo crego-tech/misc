@@ -83,7 +83,7 @@ jobs:
           python-version: 3.8
 
       - name: Fill in the new image ID in the Amazon ECS task definition
-        run: python ../../ecs_task_def_json.py task-definition.json container_image_list envs_list
+        run: python ../../ecs_task_def_json.py task-definition.json ${{ steps.build-image.outputs.image }} envs_list
 
       # - name: Fill in the new image ID in the Amazon ECS task definition
       #   id: task-def

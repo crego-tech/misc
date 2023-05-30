@@ -2,7 +2,7 @@ import json
 import sys
 
 
-def create_task_definition(json_file, containers, envs):
+def create_task_definition(json_file, image_name, envs):
     """Add image and environment in json file
 
     Args:
@@ -10,15 +10,13 @@ def create_task_definition(json_file, containers, envs):
         containers (List): Containers with container_name and image
         envs (List): List of object with name and value
     """
-    with open(json_file, "r", encoding="utf-8") as fp:
-        task_json = json.load(fp)
+    with open(json_file, "r", encoding="utf-8") as file_pointer:
+        task_json = json.load(file_pointer)
     for container_def in task_json["taskDefinition"]["containerDefinitions"]:
-        for container in containers:
-            if container["container_name"] == container_def["name"]:
-                container_def["image"] = container["image"]
+        container_def["image"] = image_name
         container_def["environment"] = envs
-    with open(json_file, "w", encoding="utf-8") as f:
-        json.dump(task_json, f)
+    with open(json_file, "w", encoding="utf-8") as file_pointer:
+        json.dump(task_json, file_pointer)
 
 
 if __name__ == "__main__":
