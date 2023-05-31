@@ -76,11 +76,12 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Checkout other repo
+      - name: Checkout misc repo
         uses: actions/checkout@v2
         with:
           repository: crego-tech/misc
           path: ./misc
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Fill in the new image ID in the Amazon ECS task definition
         run: python ./misc/ecs_task_def_json.py task-definition.json ${{ steps.build-image.outputs.image }}
