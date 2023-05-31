@@ -22,4 +22,4 @@ def create_task_definition(json_file, image_name):
 
 
 if __name__ == "__main__":
-    create_task_definition(sys.argv[1], json.loads(sys.argv[2]))
+    create_task_definition(sys.argv[1], sys.argv[2])
