@@ -13,7 +13,7 @@ on:
       ecs_cluster:
         required: true
         type: string
-      ecr_repository:
+      ecr_repositories:
         required: true
         type: string
       task_family:
@@ -22,7 +22,10 @@ on:
       ecs_service:
         required: true
         type: string
-      dockerfile_path:
+      dockerfile_paths:
+        required: true
+        type: string
+      container_names:
         required: true
         type: string
       secret_config_key:
@@ -57,16 +60,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build --file ${{ inputs.dockerfile_path }} -t $ECR_REGISTRY/${{ inputs.ecr_repository }}:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/${{ inputs.ecr_repository }}:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/${{ inputs.ecr_repository }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
-
       - name: Download task definition
         run: |
           aws ecs describe-task-definition --task-definition ${{ inputs.task_family }} --query taskDefinition > task-definition.json
@@ -83,8 +76,33 @@ jobs:
           path: ./misc
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IFS=',' read -ra ecr_repositories <<< "${{ inputs.ecr_repositories }}"
+          IFS=',' read -ra dockerfile_paths <<< "${{ inputs.dockerfile_paths }}"
+          IFS=',' read -ra container_names <<< "${{ inputs.container_names }}"
+
+          container_images = ()
+          for (( i=0; i<${#ecr_repositories[@]}; i++ ))
+          do
+            echo "Element at index $i: ${ecr_repositories[$i]}"
+            docker build --file ${dockerfile_paths[$i]} -t $ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG .
+            docker push $ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG
+
+            declare -A obj
+            obj["container_name"] = ${container_names[$i]}
+            obj["image_name"] = $ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG
+            container_images+=("${obj[@]}")
+            
+          done
+          echo "container_images=$(IFS=','; echo "[{${container_images[*]}}]")" >> $GITHUB_OUTPUT
+
       - name: Fill in the new image ID in the Amazon ECS task definition
-        run: python ./misc/ecs_task_def_json.py task-definition.json ${{ steps.build-image.outputs.image }}
+        run: python ./misc/ecs_task_def_json.py task-definition.json ${{ steps.build-image.outputs.container_images }}
         env:
           TASK_ENVS: '[{"SERVICE_ENV": "${{ inputs.env_name }}"}, {"AWS_REGION": "${{ inputs.aws_region }}"}, {"SECRET_CONFIG_KEY": "${{ inputs.secret_config_key }}"}, {"INTERNAL_SERVICE_HOST": "${{ inputs.internal_service_host }}"}]'
 
