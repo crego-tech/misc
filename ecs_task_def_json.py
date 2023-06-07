@@ -12,7 +12,13 @@ def create_task_definition(json_file, container_names, images_names):
     """
     container_names = container_names.split(",")
     images_names = images_names.split(",")
-    envs = json.loads(os.getenv('TASK_ENVS', "{}"))
+    temp_envs = json.loads(os.getenv('TASK_ENVS', "{}"))
+    envs = []
+    for key, value in temp_envs.items():
+        envs.append({
+            "name": key,
+            "value": value
+        })
     with open(json_file, "r", encoding="utf-8") as file_pointer:
         task_json = json.load(file_pointer)
     for container_def in task_json["containerDefinitions"]:
