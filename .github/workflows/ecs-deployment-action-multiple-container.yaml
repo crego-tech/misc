@@ -94,7 +94,12 @@ jobs:
             docker push $ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG
 
             json="{\"container_name\":\"${container_names[$i]}\",\"image_name\":\"$ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG\"}"
-            ecr_images+="$ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG,"
+
+            if [ -z "$ecr_images" ]; then
+              ecr_images="$json"
+            else
+              ecr_images="$ecr_images,$json"
+            fi
           done
           echo "ecr_images=$ecr_images" >> $GITHUB_OUTPUT
         shell: bash
