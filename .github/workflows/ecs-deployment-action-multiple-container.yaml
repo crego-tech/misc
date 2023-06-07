@@ -60,10 +60,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Download task definition
-        run: |
-          aws ecs describe-task-definition --task-definition ${{ inputs.task_family }} --query taskDefinition > task-definition.json
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -101,6 +97,10 @@ jobs:
           done
           echo "ecr_images=$ecr_images" >> $GITHUB_OUTPUT
         shell: bash
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ inputs.task_family }} --query taskDefinition > task-definition.json
 
       - name: Fill in the new image ID in the Amazon ECS task definition
         run: python ./misc/ecs_task_def_json.py task-definition.json ${{ inputs.container_names }} ${{ steps.build-image.outputs.ecr_images }}
