@@ -105,7 +105,7 @@ jobs:
         shell: bash
 
       - name: Fill in the new image ID in the Amazon ECS task definition
-        run: python ./misc/ecs_task_def_json.py task-definition.json ${{ steps.build-image.outputs.ecr_images }}
+        run: python ./misc/ecs_task_def_json.py task-definition.json "${{ steps.build-image.outputs.ecr_images }}"
         env:
           TASK_ENVS: '[{"SERVICE_ENV": "${{ inputs.env_name }}"}, {"AWS_REGION": "${{ inputs.aws_region }}"}, {"SECRET_CONFIG_KEY": "${{ inputs.secret_config_key }}"}, {"INTERNAL_SERVICE_HOST": "${{ inputs.internal_service_host }}"}]'
 

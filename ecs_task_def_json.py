@@ -14,7 +14,6 @@ def create_task_definition(json_file, container_images):
     envs = json.loads(os.getenv('TASK_ENVS', "{}"))
     with open(json_file, "r", encoding="utf-8") as file_pointer:
         task_json = json.load(file_pointer)
-    print(task_json)
     for container_def in task_json["taskDefinition"]["containerDefinitions"]:
         for con_img in container_images:
             if con_img["container_name"] == container_def['name']:
