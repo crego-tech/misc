@@ -97,6 +97,7 @@ jobs:
             ecr_images+="$ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG,"
           done
           echo "ecr_images=$ecr_images" >> $GITHUB_OUTPUT
+        shell: bash
 
       - name: Fill in the new image ID in the Amazon ECS task definition
         run: python ./misc/ecs_task_def_json.py task-definition.json ${{ steps.build-image.outputs.container_images }}
