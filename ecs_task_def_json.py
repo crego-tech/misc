@@ -14,10 +14,10 @@ def create_task_definition(json_file, container_names, images_names):
     images_names = images_names.split(",")
     temp_envs = json.loads(os.getenv('TASK_ENVS', "{}"))
     envs = []
-    for key, value in temp_envs.items():
+    for env in temp_envs:
         envs.append({
-            "name": key,
-            "value": value
+            "name": env.keys()[0],
+            "value": env.values()[0]
         })
     with open(json_file, "r", encoding="utf-8") as file_pointer:
         task_json = json.load(file_pointer)
