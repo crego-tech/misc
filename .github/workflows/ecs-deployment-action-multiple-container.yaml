@@ -86,7 +86,7 @@ jobs:
           IFS=',' read -ra dockerfile_paths <<< "${{ inputs.dockerfile_paths }}"
           IFS=',' read -ra container_names <<< "${{ inputs.container_names }}"
 
-          ecr_images = ""
+          ecr_images=""
           for (( i=0; i<${#ecr_repositories[@]}; i++ ))
           do
             echo "Element at index $i: ${ecr_repositories[$i]}"
