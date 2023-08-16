@@ -72,6 +72,15 @@ jobs:
           path: ./misc
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # RESTORE DOCKER LAYER CACHE
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
@@ -86,7 +95,7 @@ jobs:
           for (( i=0; i<${#ecr_repositories[@]}; i++ ))
           do
             echo "Element at index $i: ${ecr_repositories[$i]}"
-            docker build --file ${dockerfile_paths[$i]} -t $ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG .
+            docker build --file ${dockerfile_paths[$i]} --cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max -t $ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG .
             docker push $ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG
 
             if [ -z "$ecr_images" ]; then
