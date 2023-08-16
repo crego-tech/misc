@@ -98,7 +98,7 @@ jobs:
           for (( i=0; i<${#ecr_repositories[@]}; i++ ))
           do
             echo "Element at index $i: ${ecr_repositories[$i]}"
-            docker buildx build --file ${dockerfile_paths[$i]} --cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max -t $ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG . --push
+            docker buildx build --file ${dockerfile_paths[$i]} --cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max -t $ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG .
             # docker push $ECR_REGISTRY/${ecr_repositories[$i]}:$IMAGE_TAG
 
             if [ -z "$ecr_images" ]; then
