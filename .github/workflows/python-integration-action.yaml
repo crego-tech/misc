@@ -1,5 +1,5 @@
 ---
-name: "ECS Deployment Action"
+name: "Python Integration Action"
 
 on:
   workflow_call:
