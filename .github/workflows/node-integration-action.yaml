@@ -1,0 +1,61 @@
+---
+name: "ECS Deployment Action"
+
+on:
+  workflow_call:
+    inputs:
+      sentry_org:
+        required: true
+        type: string
+
+jobs:
+  analysis:
+    name: "Code Analysis"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v3
+
+      - name: "Setup Node"
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: "npm"
+
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+
+      - name: "Run pre-commit"
+        uses: pre-commit/action@v3.0.0
+
+      - name: "Sonar Scanning"
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: "Sonar Quality Gate"
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - id: set
+        run: |
+          echo "ci=yes" >> $GITHUB_OUTPUT
+
+    outputs:
+      run: ${{ steps.set.outputs.ci }}
