@@ -35,10 +35,10 @@ on:
         required: true
         type: string
       sentry_project:
-        required: true
+        required: false
         type: string
       sentry_org:
-        required: true
+        required: false
         type: string
 
 jobs:
@@ -126,11 +126,11 @@ jobs:
           cluster: ${{ inputs.ecs_cluster }}
           wait-for-service-stability: true
 
-      - name: Create Sentry release
-        uses: getsentry/action-release@v1
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_RELEASE_TOKEN }}
-          SENTRY_ORG: ${{ inputs.sentry_org }}
-          SENTRY_PROJECT: ${{ inputs.sentry_project }}
-        with:
-          environment: ${{ inputs.env_name }}
+      # - name: Create Sentry release
+      #   uses: getsentry/action-release@v1
+      #   env:
+      #     SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_RELEASE_TOKEN }}
+      #     SENTRY_ORG: ${{ inputs.sentry_org }}
+      #     SENTRY_PROJECT: ${{ inputs.sentry_project }}
+      #   with:
+      #     environment: ${{ inputs.env_name }}
