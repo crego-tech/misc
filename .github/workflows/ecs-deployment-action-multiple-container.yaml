@@ -34,12 +34,6 @@ on:
       internal_service_host:
         required: true
         type: string
-      sentry_project:
-        required: false
-        type: string
-      sentry_org:
-        required: false
-        type: string
 
 jobs:
   run:
