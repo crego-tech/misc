@@ -30,6 +30,16 @@ jobs:
           sudo apt-get install libcurl4-openssl-dev
           pipenv install --dev --deploy
 
+      - name: "Cache Pipenv Install"
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.local/share/virtualenvs
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pipenv-
+
       - name: "Cache pre-commit hooks"
         uses: actions/cache@v2
         with:
