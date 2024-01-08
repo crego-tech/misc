@@ -4,6 +4,9 @@ name: "ECS Deployment Action"
 on:
   workflow_call:
     inputs:
+      TZ:
+        required: true
+        type: string
       env_name:
         required: true
         type: string
@@ -110,7 +113,7 @@ jobs:
       - name: Fill in the new image ID in the Amazon ECS task definition
         run: python ./misc/ecs_task_def_json.py task-definition.json ${{ inputs.container_names }} ${{ steps.build-image.outputs.ecr_images }}
         env:
-          TASK_ENVS: '[{"SERVICE_ENV": "${{ inputs.env_name }}"}, {"AWS_REGION": "${{ inputs.aws_region }}"}, {"SECRET_CONFIG_KEY": "${{ inputs.secret_config_key }}"}, {"INTERNAL_SERVICE_HOST": "${{ inputs.internal_service_host }}"}]'
+          TASK_ENVS: '[{"TZ": "${{ inputs.TZ }}"},"SERVICE_ENV": "${{ inputs.env_name }}"}, {"AWS_REGION": "${{ inputs.aws_region }}"}, {"SECRET_CONFIG_KEY": "${{ inputs.secret_config_key }}"}, {"INTERNAL_SERVICE_HOST": "${{ inputs.internal_service_host }}"}]'
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
