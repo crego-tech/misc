@@ -1,0 +1,67 @@
+---
+name: "Lambda with Layer Deployment Action"
+
+on:
+  workflow_call:
+    inputs:
+      env_name:
+        required: true
+        type: string
+      aws_region:
+        required: true
+        type: string
+      account_id:
+        required: false
+        type: string
+      function_name:
+        required: true
+        type: string
+      s3_bucket:
+        required: true
+        type: string
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env_name }}
+    env:
+      AWS_REGION: ${{ inputs.aws_region }}
+      ENV_NAME: ${{ inputs.env_name }}
+      ACCOUNT_ID: ${{ inputs.account_id }}
+      FUNCTION_NAME: ${{ inputs.function_name }}
+      S3_BUCKET: ${{ inputs.s3_bucket }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Create Function Artifacts
+        run: |
+          sudo apt install zip -y
+          zip -r main.zip ./handler.py
+          aws s3 cp main.zip s3://${{ inputs.s3_bucket }}/lambda/${{ inputs.function_name }}.zip
+
+      - name: Upload Function
+        run: |
+          aws lambda update-function-code --function-name ${{ inputs.function_name }} --s3-bucket ${{ inputs.s3_bucket }} --s3-key lambda/${{ inputs.function_name }}.zip
+
+      - name: Create Layer Artifacts
+        run: |
+          sudo apt install zip -y
+          docker build -t lambda-layer .
+          docker create --name lambda-layer-container lambda-layer
+          docker cp lambda-layer-container:/app/layer.zip ./layer.zip
+          docker rm lambda-layer-container
+          aws s3 cp ./layer.zip s3://${{ inputs.s3_bucket }}/lambda-layer/lambda-python-requirements.zip
+
+      - name: Push Layer
+        run: |
+          aws lambda publish-layer-version --layer-name ${{ inputs.function_name }}-python-requirements-layer  --content S3Bucket=${{ inputs.s3_bucket }},S3Key=lambda-layer/lambda-python-requirements.zip --compatible-runtimes python3.11
+          latest_version=$(aws lambda list-layer-versions --layer-name ${{ inputs.function_name }}-python-requirements-layer --query 'max_by(LayerVersions, &Version).Version')
+          aws lambda update-function-configuration --function-name ${{ inputs.function_name }} --layers arn:aws:lambda:$AWS_REGION:$ACCOUNT_ID:layer:${{ inputs.function_name }}-python-requirements-layer:${latest_version}
