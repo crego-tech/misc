@@ -35,7 +35,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.9" # specify your desired Python version
+          python-version: "3.9"
 
       - name: Create Function Artifacts
         run: |
@@ -48,6 +48,7 @@ jobs:
 
       - name: Create Layer Artifacts
         run: |
+          pip install pipenv
           pipenv install --deploy --ignore-pipfile
           pipenv lock -r > requirements.txt
           pip install -r requirements.txt -t layer
