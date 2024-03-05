@@ -39,7 +39,7 @@ jobs:
 
       - name: Create Function Artifacts
         run: |
-          sudo apt install zip -y
+          sudo apt-get install zip -y
           zip -r main.zip ./handler.py
           aws s3 cp main.zip s3://${{ inputs.s3_bucket }}/lambda/${{ inputs.function_name }}.zip
 
