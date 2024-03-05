@@ -50,7 +50,7 @@ jobs:
         run: |
           pip install pipenv
           pipenv install --deploy --ignore-pipfile
-          pipenv lock -r > requirements.txt
+          pipenv requirements > requirements.txt
           pip install -r requirements.txt -t layer
           zip -r layer.zip layer
 
