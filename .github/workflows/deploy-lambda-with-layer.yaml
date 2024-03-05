@@ -51,12 +51,12 @@ jobs:
           pip install pipenv
           pipenv install --deploy --ignore-pipfile
           pipenv requirements > requirements.txt
-          pip install -r requirements.txt -t layer
-          zip -r layer.zip layer
+          pip install -r requirements.txt -t python
+          zip -r python.zip python
 
       - name: Push Layer
         run: |
-          aws lambda publish-layer-version --layer-name ${{ inputs.function_name }}-py --zip-file fileb://layer.zip --compatible-runtimes python3.11
+          aws lambda publish-layer-version --layer-name ${{ inputs.function_name }}-py --zip-file fileb://python.zip --compatible-runtimes python3.9
 
       - name: Update Layer Version
         run: |
