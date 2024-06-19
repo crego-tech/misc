@@ -33,7 +33,7 @@ jobs:
           REACT_APP_BASE_LAYOUT_CONFIG_KEY: "crego-layout"
           REACT_APP_LOCAL_STORAGE_AUTH: "crego-auth"
           REACT_APP_API_ROOT_DEFAULT: ${{ inputs.api_endpoint }}
-        run: npm run build
+        run: npm run build:${{inputs.env_name}}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
