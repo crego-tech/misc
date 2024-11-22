@@ -40,6 +40,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pipenv-
 
+      - name: "Run pipenv check for vulnerabilities"
+        run: |
+          pipenv check
+
       - name: "Cache pre-commit hooks"
         uses: actions/cache@v2
         with:
