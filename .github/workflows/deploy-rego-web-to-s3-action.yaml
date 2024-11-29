@@ -1,0 +1,49 @@
+---
+name: "Web Deployment Action"
+
+on:
+  workflow_call:
+    inputs:
+      env_name:
+        required: true
+        type: string
+      bucket_name:
+        required: true
+        type: string
+      api_endpoint:
+        required: true
+        type: string
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env_name }}
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v3
+
+      - name: Installing dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Clean Cache
+        run: npm cache clean --force
+
+      - name: Building project
+        env:
+          REACT_APP_NAME: "Rego"
+          REACT_APP_BASE_LAYOUT_CONFIG_KEY: "crego-layout"
+          REACT_APP_LOCAL_STORAGE_AUTH: "crego-auth"
+          REACT_APP_API_ROOT_DEFAULT: ${{ inputs.api_endpoint }}
+        run: npm run build:${{inputs.env_name}}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Deploy to S3 bucket
+        run: aws s3 sync ./dist/ s3://${{ inputs.bucket_name}}
+
+      - name: Invalidate Cloudfront
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_ID }} --paths "/*"
