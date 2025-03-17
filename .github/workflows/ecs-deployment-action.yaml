@@ -83,7 +83,7 @@ jobs:
           environment-variables: |
             SERVICE_ENV=${{ inputs.env_name }}
             AWS_REGION=${{ inputs.aws_region }}
-            aws_secret=main-secrets
+            aws_secret=${{ inputs.env_name }}-main-secrets
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
