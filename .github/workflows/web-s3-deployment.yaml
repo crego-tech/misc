@@ -40,7 +40,7 @@ jobs:
           aws-region: ap-south-1
 
       - name: Deploy to S3 bucket
-        run: aws s3 sync ./build/ s3://${{ inputs.bucket_name }} --delete
+        run: aws s3 sync ./dist/ s3://${{ inputs.bucket_name }} --delete
 
       - name: Invalidate CloudFront Cache
         run: |
