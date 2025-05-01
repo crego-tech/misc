@@ -1,4 +1,3 @@
----
 name: "Python Integration Action"
 
 on:
@@ -8,6 +7,7 @@ jobs:
   analysis:
     name: "Code Analysis"
     runs-on: ubuntu-latest
+
     steps:
       - name: "Checkout Code"
         uses: actions/checkout@v4
@@ -20,23 +20,13 @@ jobs:
           python-version: "3.11"
           cache: "pipenv"
 
-      - name: "Install Pipenv"
-        run: |
-          pip install pipenv
-
-      - name: "Install Dependencies"
-        run: |
-          sudo apt-get update
-          sudo apt-get install libcurl4-openssl-dev
-          pipenv install --dev --deploy
-
       - name: "Cache Pipenv Install"
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pip
             ~/.local/share/virtualenvs
-          key: ${{ runner.os }}-pipenv-${{ hashFiles('.pre-commit-config.yaml', '**/requirements.txt') }}
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('Pipfile.lock', '.pre-commit-config.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pipenv-
 
@@ -44,13 +34,23 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
-          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml', '**/requirements.txt') }}
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pre-commit-
+
+      - name: "Install Pipenv"
+        run: pip install pipenv
+
+      - name: "Install Dependencies"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev
+          pipenv install --dev --deploy
 
       - name: "Run pre-commit"
         uses: pre-commit/action@v3.0.0
 
+      # Optional SonarQube steps
       # - name: "Sonar Scanning"
       #   uses: sonarsource/sonarqube-scan-action@master
       #   env:
@@ -65,7 +65,7 @@ jobs:
 
       - name: "Set Status"
         id: set
-        run: |
-          echo "analysis=yes" >> $GITHUB_OUTPUT
+        run: echo "analysis=yes" >> $GITHUB_OUTPUT
+
     outputs:
       run: ${{ steps.set.outputs.analysis }}
