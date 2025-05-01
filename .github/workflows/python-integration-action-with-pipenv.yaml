@@ -36,7 +36,7 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.local/share/virtualenvs
-          key: ${{ runner.os }}-pipenv-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('.pre-commit-config.yaml', '**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pipenv-
 
@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
-          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml', '**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pre-commit-
 
