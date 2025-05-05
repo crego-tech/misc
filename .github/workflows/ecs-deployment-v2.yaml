@@ -19,9 +19,6 @@ on:
       task_family:
         required: true
         type: string
-      aws_secret_name:
-        required: true
-        type: string
       ecs_service:
         required: true
         type: string
@@ -83,9 +80,6 @@ jobs:
           task-definition: task-definition.json
           container-name: ${{ inputs.container_name }}
           image: ${{ steps.build-image.outputs.image }}
-          environment-variables: |
-            aws_secret_name=${{ inputs.aws_secret_name }}
-            AWS_REGION=${{ inputs.aws_region }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
