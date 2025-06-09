@@ -49,7 +49,7 @@ jobs:
       - name: "Configure AWS Credentials via OIDC"
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.assume_role_arn }}
+          role-to-assume: arn:aws:iam::563577067739:role/Github-crego-omni-assume-role
           aws-region: ${{ inputs.aws_region }}
 
       - name: Login to Amazon ECR
