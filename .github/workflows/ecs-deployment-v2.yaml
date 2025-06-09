@@ -29,19 +29,27 @@ on:
         required: true
         type: string
 
+    secrets:
+      assume_role_arn:
+        required: true
+
 jobs:
   run:
     runs-on: "ubuntu-latest"
     environment: ${{ inputs.env_name }}
+
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: "Checkout Code"
-        uses: "actions/checkout@v4"
+        uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: "Configure AWS Credentials via OIDC"
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.aws_access_key_id }}
-          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          role-to-assume: ${{ secrets.assume_role_arn }}
           aws-region: ${{ inputs.aws_region }}
 
       - name: Login to Amazon ECR
@@ -65,13 +73,20 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker buildx build --file ${{ inputs.dockerfile_path }} --cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max -t $ECR_REGISTRY/${{ inputs.ecr_repository }}:$IMAGE_TAG . --load
+          docker buildx build \
+            --file ${{ inputs.dockerfile_path }} \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
+            -t $ECR_REGISTRY/${{ inputs.ecr_repository }}:$IMAGE_TAG . --load
+
           docker push $ECR_REGISTRY/${{ inputs.ecr_repository }}:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/${{ inputs.ecr_repository }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Download task definition
         run: |
-          aws ecs describe-task-definition --task-definition ${{ inputs.task_family }} --query taskDefinition > task-definition.json
+          aws ecs describe-task-definition \
+            --task-definition ${{ inputs.task_family }} \
+            --query taskDefinition > task-definition.json
 
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
