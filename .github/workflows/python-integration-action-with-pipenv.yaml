@@ -30,8 +30,12 @@ jobs:
         continue-on-error: true
         run: |
           echo "Running pip-audit and filtering vulnerable deps..."
-          pip-audit --format json | jq '[.[] | select(.vulns | length > 0)]' > pip-audit-report.json
-
+          pip-audit \
+            --format json \
+            --output pip-audit-report.json \
+            --desc on \
+            --ignore-vuln "GHSA-xxxx-xxxx-xxxx"
+            
       - name: "Upload Security Report"
         if: always()
         uses: actions/upload-artifact@v4
