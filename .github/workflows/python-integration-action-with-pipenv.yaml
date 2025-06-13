@@ -4,63 +4,59 @@ on:
   workflow_call:
 
 jobs:
-  analysis:
-    name: "Code Analysis"
+  dependency-check:
+    name: "Dependency Security Check"
     runs-on: ubuntu-latest
+
     steps:
       - name: "Checkout Code"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-    
-      - name: Setup pip-audit
+
+      - name: "Setup Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: "Install pip-audit"
         run: |
-          echo "Installing security scanning tools..."
+          echo "Installing pip-audit..."
           python -m pip install --upgrade pip wheel
           pip install pip-audit
-          echo "Tool versions:"
-          echo "pip-audit $(pip-audit --version)"
 
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
-        id: pip-cache
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.local/bin
-          key: ${{ runner.os }}-pip-${{ hashFiles('Pipfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Run pip-audit (PyPI vulnerabilities)
+      - name: "Run pip-audit (vulnerable deps only)"
         id: pip-audit
         continue-on-error: true
         run: |
-          echo "Running pip-audit..."
-          pip-audit \
-            --format json \
-            --output pip-audit-report.json \
-            --desc on \
-            --ignore-vuln "GHSA-xxxx-xxxx-xxxx"  # Example: Add specific CVEs to ignore
+          echo "Running pip-audit and filtering vulnerable deps..."
+          pip-audit --format json | jq '[.[] | select(.vulns | length > 0)]' > pip-audit-report.json
 
-      - name: Upload Security Reports
-        if: always()  # Upload reports even if previous steps fail
+      - name: "Upload Security Report"
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-reports-${{ github.run_id }}
-          path: |
-            pip-audit-report.json
+          path: pip-audit-report.json
 
+  analysis:
+    name: "Integration and Code Quality"
+    runs-on: ubuntu-latest
+    needs: dependency-check  # ensures this runs after dependency-check
+
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: "Setup Python"
-        uses: actions/setup-python@v4  # Updated to v4
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-          # Removing the pipenv cache from here as it's causing the 422 error
 
       - name: "Install Pipenv"
-        run: |
-          pip install pipenv
+        run: pip install pipenv
 
       - name: "Cache Pipenv Environment"
         uses: actions/cache@v4
@@ -89,13 +85,12 @@ jobs:
 
       - name: "Run pre-commit"
         uses: pre-commit/action@v3.0.0
-
+      
       # - name: "Sonar Scanning"
       #   uses: sonarsource/sonarqube-scan-action@master
       #   env:
       #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
       # - name: "Sonar Quality Gate"
       #   uses: sonarsource/sonarqube-quality-gate-action@master
       #   timeout-minutes: 5
@@ -104,7 +99,7 @@ jobs:
 
       - name: "Set Status"
         id: set
-        run: |
-          echo "analysis=yes" >> $GITHUB_OUTPUT
+        run: echo "analysis=yes" >> $GITHUB_OUTPUT
+
     outputs:
       run: ${{ steps.set.outputs.analysis }}
