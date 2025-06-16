@@ -77,19 +77,21 @@ jobs:
 
       - name: "Run ZAP Scan on Frontend"
         run: |
-          docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-baseline.py \
+          docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-full-scan.py \
             -t $FRONTEND_URL \
             -r frontend-report.html \
             -x frontend-report.xml \
-            -n /zap/wrk/ignore.frontend.context || true
+            -n /zap/wrk/ignore.frontend.context \
+            -I || true
 
       - name: "Run ZAP Scan on Backend"
         run: |
-          docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-baseline.py \
+          docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-full-scan.py \
             -t $BACKEND_URL \
             -r backend-report.html \
             -x backend-report.xml \
-            -n /zap/wrk/ignore.backend.context || true
+            -n /zap/wrk/ignore.backend.context \
+            -I || true
 
       - name: "List Directory Contents (Post-Scan)"
         run: ls -la *.html *.xml || echo "No report files found"
