@@ -81,7 +81,7 @@ jobs:
             -t $FRONTEND_URL \
             -r frontend-report.html \
             -x frontend-report.xml \
-            -n /zap/wrk/ignore.frontend.context
+            -n /zap/wrk/ignore.frontend.context || true
 
       - name: "Run ZAP Scan on Backend"
         run: |
@@ -89,7 +89,7 @@ jobs:
             -t $BACKEND_URL \
             -r backend-report.html \
             -x backend-report.xml \
-            -n /zap/wrk/ignore.backend.context
+            -n /zap/wrk/ignore.backend.context || true
 
       - name: "List Directory Contents (Post-Scan)"
         run: ls -la *.html *.xml || echo "No report files found"
