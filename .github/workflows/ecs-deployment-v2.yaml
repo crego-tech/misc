@@ -45,6 +45,11 @@ jobs:
       - name: "Checkout Code"
         uses: actions/checkout@v4
 
+      - name: "Set up report directory"
+        run: |
+          mkdir -p zap-reports
+          chmod 777 zap-reports
+
       - name: Docker login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -52,37 +57,41 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create reports directory
-        run: mkdir -p zap-reports && chmod 777 zap-reports
-
       - name: "Run ZAP Scan on Frontend"
         run: |
           docker run \
-            -v $(pwd)/zap-reports:/zap/wrk/:rw \
+            -v $(pwd)/zap-reports:/zap/wrk:rw \
             -e ZAP_PORT=$ZAP_PORT \
-            -u zap \
-            -p $ZAP_PORT:$ZAP_PORT \
+            -u $(id -u):$(id -g) \
             --rm $ZAP_IMAGE zap-baseline.py \
             -t $FRONTEND_URL \
             -r /zap/wrk/frontend-report.html \
             -x /zap/wrk/frontend-report.xml \
-            -d
+            -d \
+            -m 5
 
       - name: "Run ZAP Scan on Backend"
         run: |
           docker run \
-            -v $(pwd)/zap-reports:/zap/wrk/:rw \
+            -v $(pwd)/zap-reports:/zap/wrk:rw \
             -e ZAP_PORT=$ZAP_PORT \
-            -u zap \
-            -p $ZAP_PORT:$ZAP_PORT \
+            -u $(id -u):$(id -g) \
             --rm $ZAP_IMAGE zap-baseline.py \
             -t $BACKEND_URL \
             -r /zap/wrk/backend-report.html \
             -x /zap/wrk/backend-report.xml \
-            -d
+            -d \
+            -m 5
+
+      - name: "Verify reports were generated"
+        run: |
+          ls -la zap-reports/
+          test -f zap-reports/frontend-report.html
+          test -f zap-reports/backend-report.html
 
       - name: "Upload ZAP Reports"
         uses: actions/upload-artifact@v4
         with:
           name: zap-dast-reports-${{ github.run_id }}
           path: zap-reports/*.html zap-reports/*.xml
+          
