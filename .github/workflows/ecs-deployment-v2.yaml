@@ -34,12 +34,13 @@ on:
 
 jobs:        
     zap_scan:
-      # needs: run
       runs-on: ubuntu-latest
 
       env:
         FRONTEND_URL: https://dev-omni.crego.tech
         BACKEND_URL: https://dev-omni-api.crego.tech
+        ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:stable
+        ZAP_VERSION: 2.14.0
 
       steps:
         - name: "Checkout Code"
@@ -53,11 +54,11 @@ jobs:
             password: ${{ secrets.GITHUB_TOKEN }}
 
         - name: "Pull OWASP ZAP Docker image"
-          run: docker pull ghcr.io/zaproxy/zap2docker-stable:2.14.0
+          run: docker pull $ZAP_IMAGE
 
         - name: "Run ZAP Scan on Frontend"
           run: |
-            docker run -v $(pwd):/zap/wrk/:rw --rm ghcr.io/zaproxy/zap2docker-stable:2.14.0 zap-baseline.py \
+            docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-baseline.py \
               -t $FRONTEND_URL \
               -r frontend-report.html \
               -x frontend-report.xml \
@@ -65,7 +66,7 @@ jobs:
 
         - name: "Run ZAP Scan on Backend"
           run: |
-            docker run -v $(pwd):/zap/wrk/:rw --rm ghcr.io/zaproxy/zap2docker-stable:2.14.0 zap-baseline.py \
+            docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-baseline.py \
               -t $BACKEND_URL \
               -r backend-report.html \
               -x backend-report.xml \
