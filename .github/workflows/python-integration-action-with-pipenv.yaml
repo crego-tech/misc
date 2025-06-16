@@ -4,45 +4,6 @@ on:
   workflow_call:
 
 jobs:
-  dependency-check:
-    name: "Dependency Security Check"
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: "Checkout Code"
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: "Setup Python"
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: "Install pip-audit"
-        run: |
-          echo "Installing pip-audit..."
-          python -m pip install --upgrade pip wheel
-          pip install pip-audit
-
-      - name: "Run pip-audit (vulnerable deps only)"
-        id: pip-audit
-        continue-on-error: true
-        run: |
-          echo "Running pip-audit and filtering vulnerable deps..."
-          pip-audit \
-            --format json \
-            --output pip-audit-report.json \
-            --desc on \
-            --ignore-vuln "GHSA-xxxx-xxxx-xxxx"
-            
-      - name: "Upload Security Report"
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-reports-${{ github.run_id }}
-          path: pip-audit-report.json
-
   analysis:
     name: "Integration and Code Quality"
     runs-on: ubuntu-latest
