@@ -33,65 +33,51 @@ on:
         required: true
 
 jobs:        
-  zap_scan:
-    runs-on: ubuntu-latest
-    env:
-      FRONTEND_URL: https://dev-omni.crego.tech
-      BACKEND_URL: https://dev-omni-api.crego.tech
-      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:stable
-      ZAP_PORT: "8080"
+    zap_scan:
+      runs-on: ubuntu-latest
 
-    steps:
-      - name: "Checkout Code"
-        uses: actions/checkout@v4
+      env:
+        FRONTEND_URL: https://dev-omni.crego.tech
+        BACKEND_URL: https://dev-omni-api.crego.tech
+        ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:stable
+        ZAP_VERSION: 2.14.0
 
-      - name: "Set up report directory"
-        run: |
-          mkdir -p zap-reports
-          chmod 777 zap-reports
+      steps:
+        - name: "Checkout Code"
+          uses: actions/checkout@v4
 
-      - name: Docker login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        - name: Docker login to GitHub Container Registry
+          uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: "Run ZAP Scan on Frontend"
-        run: |
-          docker run \
-            -v $(pwd)/zap-reports:/zap/wrk:rw \
-            -e ZAP_PORT=$ZAP_PORT \
-            -u $(id -u):$(id -g) \
-            --rm $ZAP_IMAGE zap-baseline.py \
-            -t $FRONTEND_URL \
-            -r /zap/wrk/frontend-report.html \
-            -x /zap/wrk/frontend-report.xml \
-            -d \
-            -m 5
+        - name: "Pull OWASP ZAP Docker image"
+          run: docker pull $ZAP_IMAGE
 
-      - name: "Run ZAP Scan on Backend"
-        run: |
-          docker run \
-            -v $(pwd)/zap-reports:/zap/wrk:rw \
-            -e ZAP_PORT=$ZAP_PORT \
-            -u $(id -u):$(id -g) \
-            --rm $ZAP_IMAGE zap-baseline.py \
-            -t $BACKEND_URL \
-            -r /zap/wrk/backend-report.html \
-            -x /zap/wrk/backend-report.xml \
-            -d \
-            -m 5
+        - name: "Run ZAP Scan on Frontend"
+          run: |
+            docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-baseline.py \
+              -t $FRONTEND_URL \
+              -r frontend-report.html \
+              -x frontend-report.xml \
+              -n /zap/wrk/ignore.frontend.context || true
 
-      - name: "Verify reports were generated"
-        run: |
-          ls -la zap-reports/
-          test -f zap-reports/frontend-report.html
-          test -f zap-reports/backend-report.html
+        - name: "Run ZAP Scan on Backend"
+          run: |
+            docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-baseline.py \
+              -t $BACKEND_URL \
+              -r backend-report.html \
+              -x backend-report.xml \
+              -n /zap/wrk/ignore.backend.context || true
 
-      - name: "Upload ZAP Reports"
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-dast-reports-${{ github.run_id }}
-          path: zap-reports/*.html zap-reports/*.xml
-          
+        - name: "Upload ZAP Reports"
+          uses: actions/upload-artifact@v4
+          with:
+            name: zap-dast-reports-${{ github.run_id }}
+            path: |
+              frontend-report.html
+              frontend-report.xml
+              backend-report.html
+              backend-report.xml
