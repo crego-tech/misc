@@ -7,7 +7,7 @@ jobs:
   analysis:
     name: "Integration and Code Quality"
     runs-on: ubuntu-latest
-    needs: dependency-check  # ensures this runs after dependency-check
+    # needs: dependency-check  # ensures this runs after dependency-check
 
     steps:
       - name: "Checkout Code"
