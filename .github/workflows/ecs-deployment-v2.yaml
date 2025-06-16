@@ -58,18 +58,18 @@ jobs:
 
         - name: "Run ZAP Scan on Frontend"
           run: |
-            docker run -v $(pwd):/zap/wrk/:rw -e ZAP_USER=root --rm $ZAP_IMAGE zap-baseline.py \
+            docker run -v $(pwd):/zap/wrk/:rw -u $(id -u):$(id -g) --rm $ZAP_IMAGE zap-baseline.py \
               -t $FRONTEND_URL \
-              -r /zap/wrk/frontend-report.html \
-              -x /zap/wrk/frontend-report.xml \
+              -r frontend-report.html \
+              -x frontend-report.xml \
               -n /zap/wrk/ignore.frontend.context || true
 
         - name: "Run ZAP Scan on Backend"
           run: |
-            docker run -v $(pwd):/zap/wrk/:rw -e ZAP_USER=root --rm $ZAP_IMAGE zap-baseline.py \
+            docker run -v $(pwd):/zap/wrk/:rw -u $(id -u):$(id -g) --rm $ZAP_IMAGE zap-baseline.py \
               -t $BACKEND_URL \
-              -r /zap/wrk/backend-report.html \
-              -x /zap/wrk/backend-report.xml \
+              -r backend-report.html \
+              -x backend-report.xml \
               -n /zap/wrk/ignore.backend.context || true
 
         - name: "Upload ZAP Reports"
