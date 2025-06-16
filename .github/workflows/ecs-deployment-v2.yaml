@@ -103,3 +103,44 @@ jobs:
           service: ${{ inputs.ecs_service }}
           cluster: ${{ inputs.ecs_cluster }}
           wait-for-service-stability: true
+      
+  zap_scan:
+    needs: run
+    runs-on: ubuntu-latest
+
+    env:
+      FRONTEND_URL: https://dev-omni.crego.tech
+      BACKEND_URL: https://dev-omni-api.crego.tech
+
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "Pull OWASP ZAP Docker image"
+        run: docker pull owasp/zap2docker-stable
+
+      - name: "Run ZAP Scan on Frontend"
+        run: |
+          docker run -v $(pwd):/zap/wrk/:rw --rm owasp/zap2docker-stable zap-baseline.py \
+            -t $FRONTEND_URL \
+            -r frontend-report.html \
+            -x frontend-report.xml \
+            -n /zap/wrk/ignore.frontend.context || true
+
+      - name: "Run ZAP Scan on Backend"
+        run: |
+          docker run -v $(pwd):/zap/wrk/:rw --rm owasp/zap2docker-stable zap-baseline.py \
+            -t $BACKEND_URL \
+            -r backend-report.html \
+            -x backend-report.xml \
+            -n /zap/wrk/ignore.backend.context || true
+
+      - name: "Upload ZAP Reports"
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-dast-reports-${{ github.run_id }}
+          path: |
+            frontend-report.html
+            frontend-report.xml
+            backend-report.html
+            backend-report.xml
