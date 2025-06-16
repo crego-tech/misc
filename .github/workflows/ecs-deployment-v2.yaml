@@ -32,52 +32,75 @@ on:
       assume_role_arn:
         required: true
 
-jobs:        
-    zap_scan:
-      runs-on: ubuntu-latest
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
 
-      env:
-        FRONTEND_URL: https://dev-omni.crego.tech
-        BACKEND_URL: https://dev-omni-api.crego.tech
-        ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:stable
-        ZAP_VERSION: 2.14.0
+    env:
+      FRONTEND_URL: https://dev-omni.crego.tech
+      BACKEND_URL: https://dev-omni-api.crego.tech
+      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:stable
+      ZAP_VERSION: 2.14.0
 
-      steps:
-        - name: "Checkout Code"
-          uses: actions/checkout@v4
+    permissions:
+      contents: read
+      packages: read
+      actions: write
 
-        - name: Docker login to GitHub Container Registry
-          uses: docker/login-action@v3
-          with:
-            registry: ghcr.io
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
 
-        - name: "Pull OWASP ZAP Docker image"
-          run: docker pull $ZAP_IMAGE
+      - name: "List Directory Contents (Pre-Scan)"
+        run: ls -la
 
-        - name: "Run ZAP Scan on Frontend"
-          run: |
-            docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-baseline.py \
-              -t $FRONTEND_URL \
-              -r frontend-report.html \
-              -x frontend-report.xml \
-              -n /zap/wrk/ignore.frontend.context || true
+      - name: "Set Directory Permissions"
+        run: chmod -R 777 $(pwd)
 
-        - name: "Run ZAP Scan on Backend"
-          run: |
-            docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-baseline.py \
-              -t $BACKEND_URL \
-              -r backend-report.html \
-              -x backend-report.xml \
-              -n /zap/wrk/ignore.backend.context || true
+      - name: "Docker login to GitHub Container Registry"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: "Upload ZAP Reports"
-          uses: actions/upload-artifact@v4
-          with:
-            name: zap-dast-reports-${{ github.run_id }}
-            path: |
-              frontend-report.html
-              frontend-report.xml
-              backend-report.html
-              backend-report.xml
+      - name: "Pull OWASP ZAP Docker image"
+        run: docker pull $ZAP_IMAGE
+
+      - name: "Verify ZAP Image"
+        run: docker images $ZAP_IMAGE
+
+      - name: "Test URL Accessibility"
+        run: |
+          curl -I $FRONTEND_URL
+          curl -I $BACKEND_URL
+
+      - name: "Run ZAP Scan on Frontend"
+        run: |
+          docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-baseline.py \
+            -t $FRONTEND_URL \
+            -r frontend-report.html \
+            -x frontend-report.xml \
+            -n /zap/wrk/ignore.frontend.context
+
+      - name: "Run ZAP Scan on Backend"
+        run: |
+          docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-baseline.py \
+            -t $BACKEND_URL \
+            -r backend-report.html \
+            -x backend-report.xml \
+            -n /zap/wrk/ignore.backend.context
+
+      - name: "List Directory Contents (Post-Scan)"
+        run: ls -la *.html *.xml || echo "No report files found"
+
+      - name: "Upload ZAP Reports"
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: zap-dast-reports-${{ github.run_id }}
+          path: |
+            frontend-report.html
+            frontend-report.xml
+            backend-report.html
+            backend-report.xml
