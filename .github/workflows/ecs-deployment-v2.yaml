@@ -19,9 +19,6 @@ on:
       task_family:
         required: true
         type: string
-
-
-
       ecs_service:
         required: true
         type: string
