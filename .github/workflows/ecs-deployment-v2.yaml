@@ -1,3 +1,4 @@
+---
 name: "ECS Deployment Action"
 
 on:
@@ -33,76 +34,73 @@ on:
         required: true
 
 jobs:
-  zap_scan:
-    runs-on: ubuntu-latest
-
-    env:
-      FRONTEND_URL: https://dev-omni.crego.tech
-      BACKEND_URL: https://dev-omni-api.crego.tech
-      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:stable
-      ZAP_VERSION: 2.14.0
+  run:
+    runs-on: "ubuntu-latest"
+    environment: ${{ inputs.env_name }}
 
     permissions:
+      id-token: write
       contents: read
-      packages: read
-      actions: write
 
     steps:
       - name: "Checkout Code"
         uses: actions/checkout@v4
 
-      - name: "List Directory Contents (Pre-Scan)"
-        run: ls -la
-
-      - name: "Set Directory Permissions"
-        run: chmod -R 777 $(pwd)
-
-      - name: "Docker login to GitHub Container Registry"
-        uses: docker/login-action@v3
+      - name: "Configure AWS Credentials via OIDC"
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          role-to-assume: arn:aws:iam::563577067739:role/Github-crego-omni-assume-role
+          aws-region: ${{ inputs.aws_region }}
 
-      - name: "Pull OWASP ZAP Docker image"
-        run: docker pull $ZAP_IMAGE
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
 
-      - name: "Verify ZAP Image"
-        run: docker images $ZAP_IMAGE
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
 
-      - name: "Test URL Accessibility"
-        run: |
-          curl -I $FRONTEND_URL
-          curl -I $BACKEND_URL
-
-      - name: "Run ZAP Scan on Frontend"
-        run: |
-          docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-full-scan.py \
-            -t $FRONTEND_URL \
-            -r frontend-report.html \
-            -x frontend-report.xml \
-            -n /zap/wrk/ignore.frontend.context \
-            -I || true
-
-      - name: "Run ZAP Scan on Backend"
-        run: |
-          docker run -v $(pwd):/zap/wrk/:rw --rm $ZAP_IMAGE zap-full-scan.py \
-            -t $BACKEND_URL \
-            -r backend-report.html \
-            -x backend-report.xml \
-            -n /zap/wrk/ignore.backend.context \
-            -I || true
-
-      - name: "List Directory Contents (Post-Scan)"
-        run: ls -la *.html *.xml || echo "No report files found"
-
-      - name: "Upload ZAP Reports"
-        uses: actions/upload-artifact@v4
-        continue-on-error: true
+      - name: Cache Docker layers
+        uses: actions/cache@v4
         with:
-          name: zap-dast-reports-${{ github.run_id }}
-          path: |
-            frontend-report.html
-            frontend-report.xml
-            backend-report.html
-            backend-report.xml
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker buildx build \
+            --file ${{ inputs.dockerfile_path }} \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache,mode=max \
+            -t $ECR_REGISTRY/${{ inputs.ecr_repository }}:$IMAGE_TAG . --load
+
+          docker push $ECR_REGISTRY/${{ inputs.ecr_repository }}:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/${{ inputs.ecr_repository }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ inputs.task_family }} \
+            --query taskDefinition > task-definition.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ inputs.container_name }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ inputs.ecs_service }}
+          cluster: ${{ inputs.ecs_cluster }}
+          wait-for-service-stability: true
+    
