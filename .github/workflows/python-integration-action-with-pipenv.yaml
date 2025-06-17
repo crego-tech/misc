@@ -5,7 +5,7 @@ on:
 
 jobs:
   analysis:
-    name: "Code Analysis"
+    name: "Integration and Code Quality"
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout Code"
@@ -14,14 +14,12 @@ jobs:
           fetch-depth: 0
 
       - name: "Setup Python"
-        uses: actions/setup-python@v4  # Updated to v4
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-          # Removing the pipenv cache from here as it's causing the 422 error
 
       - name: "Install Pipenv"
-        run: |
-          pip install pipenv
+        run: pip install pipenv
 
       - name: "Cache Pipenv Environment"
         uses: actions/cache@v4
@@ -50,13 +48,12 @@ jobs:
 
       - name: "Run pre-commit"
         uses: pre-commit/action@v3.0.0
-
+      
       # - name: "Sonar Scanning"
       #   uses: sonarsource/sonarqube-scan-action@master
       #   env:
       #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-
       # - name: "Sonar Quality Gate"
       #   uses: sonarsource/sonarqube-quality-gate-action@master
       #   timeout-minutes: 5
@@ -65,7 +62,7 @@ jobs:
 
       - name: "Set Status"
         id: set
-        run: |
-          echo "analysis=yes" >> $GITHUB_OUTPUT
+        run: echo "analysis=yes" >> $GITHUB_OUTPUT
+
     outputs:
       run: ${{ steps.set.outputs.analysis }}
