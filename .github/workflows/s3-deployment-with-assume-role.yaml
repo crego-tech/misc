@@ -35,7 +35,7 @@ jobs:
 
       - name: Print Bucket Name
         run: |
-          echo "Bucket name: ${{ inputs.bucket_name }}"
+          echo "Bucket name: ${{ inputs.bucket_name }}" && exit 0
 
       - name: Configure AWS credentials from IAM Role
         uses: aws-actions/configure-aws-credentials@v4
