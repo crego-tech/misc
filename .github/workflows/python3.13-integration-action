@@ -1,0 +1,68 @@
+name: "Python Integration Action"
+
+on:
+  workflow_call:
+
+jobs:
+  analysis:
+    name: "Integration and Code Quality"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout Code"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Setup Python"
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: "Install Pipenv"
+        run: pip install pipenv
+
+      - name: "Cache Pipenv Environment"
+        uses: actions/cache@v4
+        id: pipenv-cache
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.local/share/virtualenvs
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('Pipfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pipenv-
+
+      - name: "Install Dependencies"
+        run: |
+          sudo apt-get update
+          sudo apt-get install libcurl4-openssl-dev
+          pipenv install --dev --deploy
+
+      - name: "Cache pre-commit hooks"
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml', '**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pre-commit-
+
+      - name: "Run pre-commit"
+        uses: pre-commit/action@v3.0.0
+      
+      # - name: "Sonar Scanning"
+      #   uses: sonarsource/sonarqube-scan-action@master
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      # - name: "Sonar Quality Gate"
+      #   uses: sonarsource/sonarqube-quality-gate-action@master
+      #   timeout-minutes: 5
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: "Set Status"
+        id: set
+        run: echo "analysis=yes" >> $GITHUB_OUTPUT
+
+    outputs:
+      run: ${{ steps.set.outputs.analysis }}
