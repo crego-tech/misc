@@ -1,0 +1,6 @@
+# Dockerfile to recreate base-image
+FROM python:3.13.5-alpine3.21
+
+# Optional: set metadata
+LABEL purpose="Multiarch base image rebuild"
+# No commands – just using the same base
