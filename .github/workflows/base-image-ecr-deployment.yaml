@@ -1,0 +1,60 @@
+name: "Build & Push Multiarch Base Image"
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag for the image (e.g., python3.13-multiarch)"
+        required: true
+        default: "python3.13-multiarch"
+      platforms:
+        description: "Target platforms (comma-separated, e.g., linux/amd64,linux/arm64)"
+        required: true
+        default: "linux/amd64,linux/arm64"
+        type: choice
+        options:
+          - "linux/amd64,linux/arm64"
+          - "linux/amd64"
+          - "linux/arm64"
+
+env:
+  AWS_REGION: ap-south-1
+  AWS_ACCOUNT_ID: 563577067739
+  ECR_REPO_NAME: crego-omni/base-image
+  ECR_REPO_URI: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO_NAME }}
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::563577067739:role/Github-crego-omni-assume-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Multiarch Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./BaseDockerfile
+          platforms: ${{ github.event.inputs.platforms }}
+          push: true
+          tags: |
+            ${{ env.ECR_REPO_URI }}:latest
+            ${{ env.ECR_REPO_URI }}:${{ github.event.inputs.image_tag }}
