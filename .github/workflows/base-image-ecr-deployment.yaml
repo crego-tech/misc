@@ -10,6 +10,7 @@ on:
         default: "Dockerfile-Py3.13"
         options:
           - "Dockerfile-Py3.13"
+          - "Dockerfile-Py3.12"
           - "Dockerfile-Py3.11"
       environment:
         description: "Choose the environment"
@@ -39,6 +40,7 @@ on:
 
 env:
   AWS_REGION: ap-south-1
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
 jobs:
   build-and-push:
