@@ -6,6 +6,7 @@ on:
       dockerfile:
         description: "Select Dockerfile to build"
         required: true
+        type: choice
         default: "Dockerfile-Py3.13"
         options:
           - "Dockerfile-Py3.13"
@@ -13,6 +14,7 @@ on:
       environment:
         description: "Choose the environment"
         required: true
+        type: choice
         default: "non-prod"
         options:
           - "prod"
