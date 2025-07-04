@@ -40,7 +40,8 @@ on:
 
 env:
   AWS_REGION: ap-south-1
-  AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
+  # AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_ACCOUNT_ID:  563577067739 # Set this in your repository secrets for prod deployments
 
 jobs:
   build-and-push:
