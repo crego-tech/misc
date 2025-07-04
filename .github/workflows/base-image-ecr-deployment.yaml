@@ -1,4 +1,4 @@
-name: "Build & Push Multiarch Base Image"
+name: "Base Image Deployment"
 
 on:
   workflow_dispatch:
@@ -61,7 +61,7 @@ jobs:
           if [[ "${{ github.event.inputs.environment }}" == "prod" ]]; then
             echo "AWS_ACCOUNT_ID=${{ secrets.PROD_AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
           else
-            echo "AWS_ACCOUNT_ID=${{ secrets.NONPROD_AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
+            echo "AWS_ACCOUNT_ID=${{ env.AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
           fi
 
       - name: Set ECR Repository URI
