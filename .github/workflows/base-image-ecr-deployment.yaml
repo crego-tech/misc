@@ -40,7 +40,7 @@ on:
 
 env:
   AWS_REGION: ap-south-1
-  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
 
 jobs:
   build-and-push:
