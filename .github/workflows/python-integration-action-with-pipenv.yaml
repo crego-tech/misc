@@ -16,7 +16,7 @@ jobs:
       - name: "Setup Python"
         uses: actions/setup-python@v4
         with:
-          python-version: "3.13"
+          python-version: "3.11"
 
       - name: "Install Pipenv"
         run: pip install pipenv
@@ -48,7 +48,7 @@ jobs:
 
       - name: "Run pre-commit"
         uses: pre-commit/action@v3.0.0
-      
+
       # - name: "Sonar Scanning"
       #   uses: sonarsource/sonarqube-scan-action@master
       #   env:
