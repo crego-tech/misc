@@ -75,7 +75,7 @@ jobs:
 
       - name: Login to Amazon ECR Public
         run: |
-          aws ecr-public get-login-password --region ap-south-1 | docker login --username AWS --password-stdin public.ecr.aws
+          aws ecr-public get-login-password --region ap-south-1 | docker login --username AWS --password-stdin public.ecr.aws/r8g6r3v1/base-image
 
       - name: Ensure ECR repo exists
         run: |
