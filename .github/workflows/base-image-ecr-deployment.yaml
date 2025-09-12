@@ -65,7 +65,7 @@ jobs:
 
       - name: Set ECR Repository URI
         run: |
-          echo "ECR_REPO_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ github.event.inputs.ecr_repo_name }}" >> $GITHUB_ENV
+          echo "ECR_REPO_URI=public.ecr.aws/r8g6r3v1/base-image/python3.13" >> $GITHUB_ENV
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
