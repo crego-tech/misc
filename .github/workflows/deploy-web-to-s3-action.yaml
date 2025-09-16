@@ -42,8 +42,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      - name: Deploy to S3 bucket
-        run: aws s3 sync ./build/ s3://${{ inputs.bucket_name}}
+      - name: Deploy assets to S3 bucket
+        run: aws s3 sync ./build/ s3://${{ inputs.bucket_name}} --cache-control "public,max-age=31536000,immutable" --exclude index.html
+
+      - name: Deploy index.html to S3 bucket
+        run: aws s3 sync ./build/index.html s3://${{ inputs.bucket_name}}/index.html --cache-control "no-cache"
 
       - name: Invalidate Cloudfront
         run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_ID }} --paths "/*"
